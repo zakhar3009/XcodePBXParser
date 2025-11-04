@@ -1,0 +1,9 @@
+file = { SOI ~ dictionary ~ EOI }
+
+dictionary = { "{" ~ (pair ~ (";" ~ pair)*)? ~ "}" }
+
+pair = { key ~ "=" ~ value }
+
+key = { ASCII_ALPHANUMERIC+ }
+
+value = { ASCII_ALPHANUMERIC+ | "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
