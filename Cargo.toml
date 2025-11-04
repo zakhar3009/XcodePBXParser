@@ -2,5 +2,6 @@
 name = "XcodePBXParser"
 version = "0.1.0"
 edition = "2024"
+description = "Rust parser for Xcode .pbxproj files that uses a pest grammar to produce structured JSON output"
 
 [dependencies]
