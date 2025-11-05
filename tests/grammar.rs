@@ -1,0 +1,28 @@
+use pest::Parser;
+use pest_derive::Parser;
+
+#[derive(Parser)]
+#[grammar = "src/pbxproj.pest"]
+struct PbxprojParser;
+
+#[test]
+fn single_entry_file_parsing() {
+    let input = "{productName=Alamofire}";
+    let result = PbxprojParser::parse(Rule::file, input).expect("file should parse");
+    assert_eq!(result.as_str(), input);
+}
+
+#[test]
+fn multiple_entries_dictionary_parsing() {
+    let input = "{isa=PBXBuildFile;fileRef=ABCD1234;path=\"SomePath\"}";
+    let result = PbxprojParser::parse(Rule::dictionary, input)
+        .expect("dictionary should parse");
+    assert_eq!(result.as_str(), input);
+}
+
+#[test]
+fn invalid_dictionary_parsing() {
+    let input = "{productName=\"SomeApp\";}";
+    assert!(PbxprojParser::parse(Rule::dictionary, input).is_err());
+}
+
