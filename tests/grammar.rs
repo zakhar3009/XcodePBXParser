@@ -14,7 +14,7 @@ fn single_entry_file_parsing() {
 
 #[test]
 fn multiple_entries_dictionary_parsing() {
-    let input = "{isa=PBXBuildFile;fileRef=ABCD1234;path=\"SomePath\"}";
+    let input = "{ isa = PBXBuildFile; fileRef = ABCD1234; path = \"SomePath\" }";
     let result = PbxprojParser::parse(Rule::dictionary, input)
         .expect("dictionary should parse");
     assert_eq!(result.as_str(), input);
@@ -22,7 +22,14 @@ fn multiple_entries_dictionary_parsing() {
 
 #[test]
 fn invalid_dictionary_parsing() {
-    let input = "{productName=\"SomeApp\";}";
+    let input = "{productName=\"SomeApp\"";
     assert!(PbxprojParser::parse(Rule::dictionary, input).is_err());
 }
 
+#[test]
+fn dictionary_with_comments_parsing() {
+    let input = "{ /* leading */ key = value; value2 = other /* trailing */; }";
+    let result = PbxprojParser::parse(Rule::dictionary, input)
+        .expect("dictionary with comments should parse");
+    assert_eq!(result.as_str(), input);
+}

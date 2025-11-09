@@ -1,9 +1,25 @@
-file = { SOI ~ dictionary ~ EOI }
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
 
-dictionary = { "{" ~ (pair ~ (";" ~ pair)*)? ~ "}" }
+COMMENT = _{ BLOCK_COMMENT | LINE_COMMENT }
 
-pair = { key ~ "=" ~ value }
+BLOCK_COMMENT = { "/*" ~ ( (!"*/" ~ ANY) )* ~ "*/" }
+
+LINE_COMMENT = { "//" ~ ( (!"\n" ~ ANY) )* ~ ("\n" | EOI) }
+
+skip = _{ (WHITESPACE | COMMENT)* }
+
+file = { SOI ~ skip ~ dictionary ~ skip ~ EOI }
+
+dictionary = { "{" ~ skip ~ pair_sequence? ~ skip ~ "}" }
+
+pair_sequence = { pair_entry ~ (";" ~ skip ~ pair_entry)* ~ ";"? }
+
+pair_entry = { skip ~ pair ~ skip }
+
+pair = { key ~ skip ~ "=" ~ skip ~ value }
 
 key = { ASCII_ALPHANUMERIC+ }
 
-value = { ASCII_ALPHANUMERIC+ | "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+value = { ASCII_ALPHANUMERIC+ | string }
+
+string = { "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
