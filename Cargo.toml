@@ -7,3 +7,4 @@ description = "Rust parser for Xcode .pbxproj files that uses a pest grammar to 
 [dependencies]
 pest = "2.7"
 pest_derive = "2.7"
+thiserror = "1.0"
