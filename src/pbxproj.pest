@@ -18,8 +18,22 @@ pair_entry = { skip ~ pair ~ skip }
 
 pair = { key ~ skip ~ "=" ~ skip ~ value }
 
-key = { ASCII_ALPHANUMERIC+ }
+key = { string | identifier }
 
-value = { ASCII_ALPHANUMERIC+ | string }
+value = { dictionary | array | string | identifier | number }
 
-string = { "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+
+array = { "(" ~ skip ~ value_list? ~ skip ~ ")" }
+
+value_list = { value_entry ~ ("," ~ skip ~ value_entry)* ~ ","? }
+
+value_entry = { skip ~ value ~ skip }
+
+identifier = @{ identifier_start ~ identifier_char* }
+
+identifier_start = _{ ASCII_ALPHANUMERIC | "_" | "/" }
+
+identifier_char = _{ ASCII_ALPHANUMERIC | "_" | "." | "+" | "-" | "/" | "$" }
+
+number = { "-"? ~ ASCII_DIGIT+ }
