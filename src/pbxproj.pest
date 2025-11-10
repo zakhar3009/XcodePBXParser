@@ -6,29 +6,31 @@ BLOCK_COMMENT = { "/*" ~ ( (!"*/" ~ ANY) )* ~ "*/" }
 
 LINE_COMMENT = { "//" ~ ( (!"\n" ~ ANY) )* ~ ("\n" | EOI) }
 
-skip = _{ (WHITESPACE | COMMENT)* }
+skip = _{ (" " | "\t" | "\r" | "\n")* }
 
-file = { SOI ~ skip ~ dictionary ~ skip ~ EOI }
+padding = _{ (WHITESPACE | COMMENT)* }
 
-dictionary = { "{" ~ skip ~ pair_sequence? ~ skip ~ "}" }
+file = { SOI ~ padding ~ dictionary ~ padding ~ EOI }
 
-pair_sequence = { pair_entry ~ (";" ~ skip ~ pair_entry)* ~ ";"? }
+dictionary = { "{" ~ padding ~ pair_sequence? ~ padding ~ "}" }
 
-pair_entry = { skip ~ pair ~ skip }
+pair_sequence = { pair_entry ~ (";" ~ padding ~ pair_entry)* ~ ";"? }
+
+pair_entry = { padding ~ pair ~ pair_comment? ~ skip }
 
 pair = { key ~ skip ~ "=" ~ skip ~ value }
 
 key = { string | identifier }
 
-value = { dictionary | array | string | identifier | number }
+value = { dictionary | array | string | number | identifier }
 
 string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
 
-array = { "(" ~ skip ~ value_list? ~ skip ~ ")" }
+array = { "(" ~ padding ~ value_list? ~ padding ~ ")" }
 
-value_list = { value_entry ~ ("," ~ skip ~ value_entry)* ~ ","? }
+value_list = { value_entry ~ ("," ~ padding ~ value_entry)* ~ ","? }
 
-value_entry = { skip ~ value ~ skip }
+value_entry = { padding ~ value ~ padding }
 
 identifier = @{ identifier_start ~ identifier_char* }
 
@@ -37,3 +39,7 @@ identifier_start = _{ ASCII_ALPHANUMERIC | "_" | "/" }
 identifier_char = _{ ASCII_ALPHANUMERIC | "_" | "." | "+" | "-" | "/" | "$" }
 
 number = { "-"? ~ ASCII_DIGIT+ }
+
+pair_comment = { skip ~ inline_comment }
+
+inline_comment = { BLOCK_COMMENT | LINE_COMMENT }
