@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 fn main() {
     let sample = "{productName=Sample}";
     match XcodePBXParser::parse_document(sample) {

@@ -2,11 +2,9 @@ WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
 
 COMMENT = _{ BLOCK_COMMENT | LINE_COMMENT }
 
-BLOCK_COMMENT = { "/*" ~ ( (!"*/" ~ ANY) )* ~ "*/" }
+BLOCK_COMMENT = { "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 
-LINE_COMMENT = { "//" ~ ( (!"\n" ~ ANY) )* ~ ("\n" | EOI) }
-
-skip = _{ (" " | "\t" | "\r" | "\n")* }
+LINE_COMMENT = { "//" ~ (!"\n" ~ ANY)* ~ ("\n" | EOI) }
 
 padding = _{ (WHITESPACE | COMMENT)* }
 
@@ -16,9 +14,9 @@ dictionary = { "{" ~ padding ~ pair_sequence? ~ padding ~ "}" }
 
 pair_sequence = { pair_entry ~ (";" ~ padding ~ pair_entry)* ~ ";"? }
 
-pair_entry = { padding ~ pair ~ pair_comment? ~ skip }
+pair_entry = { padding ~ pair ~ padding }
 
-pair = { key ~ skip ~ "=" ~ skip ~ value }
+pair = { key ~ padding ~ "=" ~ padding ~ value }
 
 key = { string | identifier }
 
@@ -45,7 +43,3 @@ identifier_start = _{ ASCII_ALPHANUMERIC | "_" | "/" }
 identifier_char = _{ ASCII_ALPHANUMERIC | "_" | "." | "+" | "-" | "/" | "$" }
 
 number = { "-"? ~ ASCII_DIGIT+ }
-
-pair_comment = { skip ~ inline_comment }
-
-inline_comment = { BLOCK_COMMENT | LINE_COMMENT }
