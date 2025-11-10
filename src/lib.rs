@@ -1,18 +1,21 @@
 use pest::iterators::Pair;
 use pest::Parser;
 use pest_derive::Parser;
+use serde::Serialize;
 use thiserror::Error;
 
 #[derive(Parser)]
 #[grammar = "src/pbxproj.pest"]
 struct PbxprojParser;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct PbxDocument {
+    #[serde(flatten)]
     pub root: PbxValue,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(tag = "type", content = "value", rename_all = "snake_case")]
 pub enum PbxValue {
     Dictionary(Vec<PbxEntry>),
     Array(Vec<PbxValue>),
@@ -21,10 +24,11 @@ pub enum PbxValue {
     Number(String),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct PbxEntry {
     pub key: String,
     pub value: PbxValue,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub comment: Option<String>,
 }
 
@@ -43,6 +47,10 @@ pub enum PbxParseError {
 impl PbxDocument {
     pub fn new(root: PbxValue) -> Self {
         Self { root }
+    }
+
+    pub fn to_json(&self) -> serde_json::Value {
+        serde_json::to_value(&self.root).expect("PbxDocument JSON serialization")
     }
 }
 
