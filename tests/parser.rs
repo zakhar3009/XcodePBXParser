@@ -1,15 +1,19 @@
 use XcodePBXParser::{parse_document, PbxEntry, PbxValue};
 
 #[test]
-fn parses_nested_dictionary() {
-    let input = "{ outer = { inner = value; }; flag = YES; quoted = \"Value\"; }";
+fn parses_dictionary_with_array() {
+    let input = "{ outer = { inner = (First, Second, 7); }; flag = YES; quoted = \"Value\"; }";
     let document = parse_document(input).expect("document parses");
     let expected = PbxValue::Dictionary(vec![
         PbxEntry {
             key: "outer".into(),
             value: PbxValue::Dictionary(vec![PbxEntry {
                 key: "inner".into(),
-                value: PbxValue::Identifier("value".into()),
+                value: PbxValue::Array(vec![
+                    PbxValue::Identifier("First".into()),
+                    PbxValue::Identifier("Second".into()),
+                    PbxValue::Number("7".into()),
+                ]),
             }]),
         },
         PbxEntry {

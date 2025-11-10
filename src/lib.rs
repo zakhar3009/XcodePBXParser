@@ -60,6 +60,7 @@ fn parse_rule(pair: Pair<Rule>) -> Result<PbxValue, PbxParseError> {
             parse_rule(child)
         }
         Rule::dictionary => parse_dictionary(pair),
+        Rule::array => parse_array(pair),
         Rule::string => Ok(PbxValue::String(unquote(pair.as_str()))),
         Rule::identifier => Ok(PbxValue::Identifier(pair.as_str().to_string())),
         Rule::number => Ok(PbxValue::Number(pair.as_str().to_string())),
@@ -124,6 +125,42 @@ fn parse_key(pair: Pair<Rule>) -> Result<String, PbxParseError> {
         Rule::identifier => Ok(token.as_str().to_string()),
         other => Err(PbxParseError::UnexpectedRule(other)),
     }
+}
+
+fn parse_array(pair: Pair<Rule>) -> Result<PbxValue, PbxParseError> {
+    let mut values = Vec::new();
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::value_list => values.extend(parse_value_list(child)?),
+            Rule::value => values.push(parse_rule(child)?),
+            Rule::value_entry => values.push(parse_value_entry(child)?),
+            Rule::skip | Rule::COMMENT => {}
+            other => return Err(PbxParseError::UnexpectedRule(other)),
+        }
+    }
+    Ok(PbxValue::Array(values))
+}
+
+fn parse_value_list(pair: Pair<Rule>) -> Result<Vec<PbxValue>, PbxParseError> {
+    let mut values = Vec::new();
+    for child in pair.into_inner() {
+        match child.as_rule() {
+            Rule::value_entry => values.push(parse_value_entry(child)?),
+            Rule::value => values.push(parse_rule(child)?),
+            Rule::skip | Rule::COMMENT => {}
+            other => return Err(PbxParseError::UnexpectedRule(other)),
+        }
+    }
+    Ok(values)
+}
+
+fn parse_value_entry(pair: Pair<Rule>) -> Result<PbxValue, PbxParseError> {
+    for child in pair.into_inner() {
+        if child.as_rule() == Rule::value {
+            return parse_rule(child);
+        }
+    }
+    Err(PbxParseError::MissingChild)
 }
 
 fn unquote(s: &str) -> String {
