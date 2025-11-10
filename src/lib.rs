@@ -28,8 +28,6 @@ pub enum PbxValue {
 pub struct PbxEntry {
     pub key: String,
     pub value: PbxValue,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub comment: Option<String>,
 }
 
 #[derive(Debug, Error)]
@@ -70,7 +68,7 @@ fn parse_rule(pair: Pair<Rule>) -> Result<PbxValue, PbxParseError> {
         }
         Rule::dictionary => parse_dictionary(pair),
         Rule::array => parse_array(pair),
-        Rule::string => Ok(PbxValue::String(unquote(pair.as_str()))),
+        Rule::string => parse_string(pair).map(PbxValue::String),
         Rule::identifier => Ok(PbxValue::Identifier(pair.as_str().to_string())),
         Rule::number => Ok(PbxValue::Number(pair.as_str().to_string())),
         Rule::value => {
@@ -109,30 +107,12 @@ fn parse_pair_sequence(pair: Pair<Rule>) -> Result<Vec<PbxEntry>, PbxParseError>
 }
 
 fn parse_pair_entry(pair: Pair<Rule>) -> Result<PbxEntry, PbxParseError> {
-    let entry_text = pair.as_span().as_str().to_string();
-    let mut entry: Option<PbxEntry> = None;
-    let mut comment: Option<String> = None;
-    let mut pair_text: Option<String> = None;
     for child in pair.into_inner() {
-        match child.as_rule() {
-            Rule::pair => {
-                pair_text = Some(child.as_span().as_str().to_string());
-                entry = Some(parse_pair(child)?);
-            }
-            Rule::pair_comment => comment = Some(parse_pair_comment(child)?),
-            Rule::skip | Rule::COMMENT => {}
-            other => return Err(PbxParseError::UnexpectedRule(other)),
+        if child.as_rule() == Rule::pair {
+            return parse_pair(child);
         }
     }
-    let mut entry = entry.ok_or(PbxParseError::MissingChild)?;
-    if let Some(comment) = comment {
-        entry.comment = Some(comment);
-    } else if let Some(pair_text) = pair_text {
-        if let Some(extracted) = extract_inline_comment(&entry_text, &pair_text) {
-            entry.comment = Some(extracted);
-        }
-    }
-    Ok(entry)
+    Err(PbxParseError::MissingChild)
 }
 
 fn parse_pair(pair: Pair<Rule>) -> Result<PbxEntry, PbxParseError> {
@@ -141,18 +121,14 @@ fn parse_pair(pair: Pair<Rule>) -> Result<PbxEntry, PbxParseError> {
     let key = parse_key(key_pair)?;
     let value_pair = inner.next().ok_or(PbxParseError::MissingChild)?;
     let value = parse_rule(value_pair)?;
-    Ok(PbxEntry {
-        key,
-        value,
-        comment: None,
-    })
+    Ok(PbxEntry { key, value })
 }
 
 fn parse_key(pair: Pair<Rule>) -> Result<String, PbxParseError> {
     let mut inner = pair.into_inner();
     let token = inner.next().ok_or(PbxParseError::MissingChild)?;
     match token.as_rule() {
-        Rule::string => Ok(unquote(token.as_str())),
+        Rule::string => parse_string(token),
         Rule::identifier => Ok(token.as_str().to_string()),
         other => Err(PbxParseError::UnexpectedRule(other)),
     }
@@ -194,49 +170,11 @@ fn parse_value_entry(pair: Pair<Rule>) -> Result<PbxValue, PbxParseError> {
     Err(PbxParseError::MissingChild)
 }
 
-fn parse_pair_comment(pair: Pair<Rule>) -> Result<String, PbxParseError> {
-    if pair.as_rule() != Rule::pair_comment {
-        return Err(PbxParseError::UnexpectedRule(pair.as_rule()));
-    }
-    let mut inner = pair.into_inner();
-    let comment_pair = inner.next().ok_or(PbxParseError::MissingChild)?;
-    if comment_pair.as_rule() != Rule::inline_comment {
-        return Err(PbxParseError::UnexpectedRule(comment_pair.as_rule()));
-    }
-    Ok(clean_comment(comment_pair.as_str()))
-}
-
-fn extract_inline_comment(entry_text: &str, pair_text: &str) -> Option<String> {
-    let trimmed_entry = entry_text.trim_start();
-    let rest = trimmed_entry.strip_prefix(pair_text)?;
-    let candidate = rest.trim();
-    if candidate.is_empty() {
-        return None;
-    }
-    if candidate.starts_with("/*") && candidate.ends_with("*/") {
-        Some(clean_comment(candidate))
-    } else if candidate.starts_with("//") {
-        Some(clean_comment(candidate))
-    } else {
-        None
-    }
-}
-
-fn clean_comment(raw: &str) -> String {
-    let trimmed = raw.trim();
-    if trimmed.starts_with("/*") && trimmed.ends_with("*/") && trimmed.len() >= 4 {
-        trimmed[2..trimmed.len() - 2].trim().to_string()
-    } else if trimmed.starts_with("//") {
-        trimmed[2..].trim().to_string()
-    } else {
-        trimmed.to_string()
-    }
-}
-
-fn unquote(s: &str) -> String {
+fn parse_string(pair: Pair<Rule>) -> Result<String, PbxParseError> {
+    let s = pair.as_str();
     let mut chars = s.chars();
     chars.next();
     chars.next_back();
-    chars.collect()
+    Ok(chars.collect())
 }
 

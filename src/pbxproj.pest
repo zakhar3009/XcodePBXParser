@@ -22,9 +22,15 @@ pair = { key ~ skip ~ "=" ~ skip ~ value }
 
 key = { string | identifier }
 
-value = { dictionary | array | string | number | identifier }
+value = { dictionary | array | string | identifier | number }
 
-string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+string = @{ "\"" ~ string_inner* ~ "\"" }
+
+string_inner = _{ escape | (!"\"" ~ ANY) }
+
+escape = _{ "\\" ~ ( unicode | "\"" | "\\" | "b" | "f" | "n" | "r" | "t" ) }
+
+unicode = { "u" ~ ASCII_HEX_DIGIT ~ ASCII_HEX_DIGIT ~ ASCII_HEX_DIGIT ~ ASCII_HEX_DIGIT }
 
 array = { "(" ~ padding ~ value_list? ~ padding ~ ")" }
 

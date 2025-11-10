@@ -13,21 +13,17 @@ fn parses_dictionary_with_array() {
                 value: PbxValue::Array(vec![
                     PbxValue::Identifier("First".into()),
                     PbxValue::Identifier("Second".into()),
-                    PbxValue::Number("7".into()),
+                    PbxValue::Identifier("7".into()),
                 ]),
-                comment: None,
             }]),
-            comment: None,
         },
         PbxEntry {
             key: "flag".into(),
             value: PbxValue::Identifier("YES".into()),
-            comment: Some("Begin PBXBuildFile section".into()),
         },
         PbxEntry {
             key: "quoted".into(),
             value: PbxValue::String("Value".into()),
-            comment: None,
         },
     ]);
 
@@ -49,7 +45,7 @@ fn parses_dictionary_with_array() {
                                 "value": [
                                     { "type": "identifier", "value": "First" },
                                     { "type": "identifier", "value": "Second" },
-                                    { "type": "number", "value": "7" }
+                                    { "type": "identifier", "value": "7" }
                                 ]
                             }
                         }
@@ -58,8 +54,7 @@ fn parses_dictionary_with_array() {
             },
             {
                 "key": "flag",
-                "value": { "type": "identifier", "value": "YES" },
-                "comment": "Begin PBXBuildFile section"
+                "value": { "type": "identifier", "value": "YES" }
             },
             {
                 "key": "quoted",
